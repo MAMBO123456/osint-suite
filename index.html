@@ -142,93 +142,91 @@
                                 <div class="coords-display">
                                     LAT: <span id="lat-val">0.00000</span> | LNG: <span id="lng-val">0.00000</span>
                                 </div>
-                                <div class="address-resolver-group">
-                                    <button id="resolve-address-btn" title="Resolve Coordinates to Address"><i
-                                            data-lucide="map-pin"></i> RESOLVE ADDRESS</button>
-                                    <button id="demo-gps-btn" class="demo-btn"
-                                        title="Prove accuracy using your own GPS"><i data-lucide="crosshair"></i> DEMO:
-                                        MY REAL GPS</button>
-                                    <button id="refine-toggle-btn"><i data-lucide="edit-3"></i> REFINE</button>
-                                </div>
+                                <div id="confidence-badge" class="confidence-low">PASSIVE ESTIMATE</div>
                             </div>
-                            <div id="resolved-address-bar" class="hidden">
-                                <i data-lucide="info"></i> <span id="resolved-address-text">Scanning for physical
-                                    address...</span>
-                            </div>
-                            <div id="manual-refine-panel" class="hidden">
-                                <div class="refine-inputs">
-                                    <input type="text" id="manual-lat" placeholder="LAT">
-                                    <input type="text" id="manual-lng" placeholder="LNG">
-                                    <button id="update-map-btn">UPDATE FIX</button>
-                                </div>
-                            </div>
+                            <button id="resolve-address-btn" title="Resolve Coordinates to Address"><i
+                                    data-lucide="map-pin"></i> RESOLVE ADDRESS</button>
+                            <button id="demo-gps-btn" class="demo-btn" title="Prove accuracy using your own GPS"><i
+                                    data-lucide="crosshair"></i> DEMO:
+                                MY REAL GPS</button>
+                            <button id="refine-toggle-btn"><i data-lucide="edit-3"></i> REFINE</button>
                         </div>
-
-                        <!-- Intelligence Correlation Panel -->
-                        <div class="panel correlation-panel">
-                            <div class="panel-header"><i data-lucide="brain-circuit"></i> INTELLIGENCE CORRELATION</div>
-                            <div class="correlation-form">
-                                <div class="form-group-inline">
-                                    <input type="text" id="clue-name" placeholder="KNOWN NAME">
-                                    <button class="clue-search-btn" data-source="social"><i
-                                            data-lucide="users"></i></button>
-                                </div>
-                                <div class="form-group-inline">
-                                    <input type="text" id="clue-address" placeholder="PROBABLE AREA/ADDRESS">
-                                    <button class="clue-search-btn" data-source="maps"><i
-                                            data-lucide="map"></i></button>
-                                </div>
-                                <div class="form-group-inline">
-                                    <textarea id="clue-image" placeholder="IMAGE DESCRIPTION / ENTITY DETAILS"
-                                        rows="2"></textarea>
-                                    <button class="clue-search-btn" data-source="images"><i
-                                            data-lucide="image"></i></button>
-                                </div>
-                            </div>
-                            <p class="panel-hint">Cross-reference known entities with geospatial data to confirm exact
-                                location.</p>
-                        </div>
-
-                        <!-- Digital Footprint Scraper -->
-                        <div class="panel scraper-panel">
-                            <div class="panel-header"><i data-lucide="fingerprint"></i> DIGITAL FOOTPRINT (METHOD #1)
-                            </div>
-                            <div class="scraper-grid">
-                                <button class="scraper-btn" data-search="instagram"><i data-lucide="instagram"></i> IG
-                                    GEOTAGS</button>
-                                <button class="scraper-btn" data-search="twitter"><i data-lucide="twitter"></i> TWITTER
-                                    CLUES</button>
-                                <button class="scraper-btn" data-search="linkedin"><i data-lucide="linkedin"></i> WORK
-                                    LOCATIONS</button>
-                                <button class="scraper-btn" data-search="facebook"><i data-lucide="facebook"></i> FB
-                                    CHECK-INS</button>
-                            </div>
-                            <p class="panel-hint">Search for photos, check-ins, or posts containing location tags.</p>
-                        </div>
-
-                        <!-- Advanced Recon Hub -->
-                        <div class="panel hub-panel">
-                            <div class="panel-header"><i data-lucide="layers"></i> PIVOT INTELLIGENCE</div>
-                            <div class="pivot-grid">
-                                <button class="pivot-btn" data-type="intelx"><i data-lucide="database"></i>
-                                    INTELX</button>
-                                <button class="pivot-btn" data-type="dehashed"><i data-lucide="unlock"></i>
-                                    DEHASHED</button>
-                                <button class="pivot-btn" data-type="truecaller"><i data-lucide="user-check"></i>
-                                    TRUECALLER</button>
-                                <button class="pivot-btn" data-type="whatsapp"><i data-lucide="message-square"></i>
-                                    WHATSAPP</button>
-                                <button class="pivot-btn" data-type="telegram"><i data-lucide="send"></i>
-                                    TELEGRAM</button>
-                                <button class="pivot-btn" data-type="google-geo"><i data-lucide="map-pin"></i>
-                                    GEO-DORK</button>
-                                <button class="pivot-btn" data-type="leaks"><i data-lucide="search"></i> LEAK
-                                    SEARCH</button>
-                                <button class="pivot-btn" data-type="hlr"><i data-lucide="rss"></i> HLR LOOKUP</button>
-                            </div>
+                    </div>
+                    <div id="resolved-address-bar" class="hidden">
+                        <i data-lucide="info"></i> <span id="resolved-address-text">Scanning for physical
+                            address...</span>
+                    </div>
+                    <div id="manual-refine-panel" class="hidden">
+                        <div class="refine-inputs">
+                            <input type="text" id="manual-lat" placeholder="LAT">
+                            <input type="text" id="manual-lng" placeholder="LNG">
+                            <button id="update-map-btn">UPDATE FIX</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- Intelligence Correlation Panel -->
+                <div class="panel correlation-panel">
+                    <div class="panel-header"><i data-lucide="brain-circuit"></i> INTELLIGENCE CORRELATION</div>
+                    <div class="correlation-form">
+                        <div class="form-group-inline">
+                            <input type="text" id="clue-name" placeholder="KNOWN NAME">
+                            <button class="clue-search-btn" data-source="social"><i data-lucide="users"></i></button>
+                        </div>
+                        <div class="form-group-inline">
+                            <input type="text" id="clue-address" placeholder="PROBABLE AREA/ADDRESS">
+                            <button class="clue-search-btn" data-source="maps"><i data-lucide="map"></i></button>
+                        </div>
+                        <div class="form-group-inline">
+                            <textarea id="clue-image" placeholder="IMAGE DESCRIPTION / ENTITY DETAILS"
+                                rows="2"></textarea>
+                            <button class="clue-search-btn" data-source="images"><i data-lucide="image"></i></button>
+                        </div>
+                    </div>
+                    <p class="panel-hint">Cross-reference known entities with geospatial data to confirm exact
+                        location.</p>
+                </div>
+
+                <!-- Digital Footprint Scraper -->
+                <div class="panel scraper-panel">
+                    <div class="panel-header"><i data-lucide="fingerprint"></i> DIGITAL FOOTPRINT (METHOD #1)
+                    </div>
+                    <div class="scraper-grid">
+                        <button class="scraper-btn" data-search="instagram"><i data-lucide="instagram"></i> IG
+                            GEOTAGS</button>
+                        <button class="scraper-btn" data-search="twitter"><i data-lucide="twitter"></i> TWITTER
+                            CLUES</button>
+                        <button class="scraper-btn" data-search="linkedin"><i data-lucide="linkedin"></i> WORK
+                            LOCATIONS</button>
+                        <button class="scraper-btn" data-search="facebook"><i data-lucide="facebook"></i> FB
+                            CHECK-INS</button>
+                    </div>
+                    <p class="panel-hint">Search for photos, check-ins, or posts containing location tags.</p>
+                </div>
+
+                <!-- Advanced Recon Hub -->
+                <div class="panel hub-panel">
+                    <div class="panel-header"><i data-lucide="layers"></i> PIVOT INTELLIGENCE</div>
+                    <div class="pivot-grid">
+                        <button class="pivot-btn" data-type="intelx"><i data-lucide="database"></i>
+                            INTELX</button>
+                        <button class="pivot-btn" data-type="dehashed"><i data-lucide="unlock"></i>
+                            DEHASHED</button>
+                        <button class="pivot-btn" data-type="truecaller"><i data-lucide="user-check"></i>
+                            TRUECALLER</button>
+                        <button class="pivot-btn" data-type="whatsapp"><i data-lucide="message-square"></i>
+                            WHATSAPP</button>
+                        <button class="pivot-btn" data-type="telegram"><i data-lucide="send"></i>
+                            TELEGRAM</button>
+                        <button class="pivot-btn" data-type="google-geo"><i data-lucide="map-pin"></i>
+                            GEO-DORK</button>
+                        <button class="pivot-btn" data-type="leaks"><i data-lucide="search"></i> LEAK
+                            SEARCH</button>
+                        <button class="pivot-btn" data-type="hlr"><i data-lucide="rss"></i> HLR LOOKUP</button>
+                    </div>
+                </div>
+            </div>
+            </div>
             </div>
 
             <!-- Payloads Tab -->

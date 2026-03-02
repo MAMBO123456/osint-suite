@@ -199,6 +199,12 @@ function updateMapDisplay(lat, lon, zoom = 15, accuracy = 'estimated') {
     const labelColor = accuracy === 'verified' ? '#00ff41' : '#ffaa00';
     const labelText = accuracy === 'verified' ? '[ VERIFIED GPS FIX ]' : '[ REGIONAL ESTIMATE ]';
 
+    const confidenceBadge = document.getElementById('confidence-badge');
+    if (confidenceBadge) {
+        confidenceBadge.textContent = labelText;
+        confidenceBadge.className = accuracy === 'verified' ? 'confidence-high' : 'confidence-low';
+    }
+
     marker = L.marker([lat, lon]).addTo(map)
         .bindPopup(`
             <b style="color:${labelColor}">${labelText}</b><br>
@@ -216,8 +222,16 @@ function updateMapDisplay(lat, lon, zoom = 15, accuracy = 'estimated') {
 async function captureMyGPS() {
     showStatus("Accessing local GPS sensor...", "success");
     if (!navigator.geolocation) {
-        showStatus("GPS Sensor not found.", "error");
+        showStatus("GPS Sensor not found or insecure context.", "error");
         return;
+    }
+
+    // Reveal Dashboard if it's currently hidden
+    if (dashboard.classList.contains('dashboard-hidden')) {
+        dashboard.classList.remove('dashboard-hidden');
+        dashboard.classList.add('dashboard-visible');
+        document.querySelector('.search-bar-container').classList.add('hidden');
+        document.getElementById('current-target').textContent = "LOCAL DEVICE (SELF-SCAN)";
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -234,9 +248,13 @@ async function captureMyGPS() {
         },
         (error) => {
             console.error(error);
-            showStatus("Permission Denied / Timeout", "error");
+            if (error.code === 1) {
+                showStatus("Error: Permission denied by browser.", "error");
+            } else {
+                showStatus("Error: Timeout / Sensor failure.", "error");
+            }
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
