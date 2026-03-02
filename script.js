@@ -151,15 +151,35 @@ async function handleAnalysis() {
         const tzMapping = { 'IN': '+5:30', 'US': '-5:00', 'GB': '+0:00', 'FR': '+1:00', 'DE': '+1:00' };
         document.getElementById('res-timezone').textContent = "UTC " + (tzMapping[phoneNumber.country] || "VARIES");
 
+        // Carrier Mapping (Simulated Prefix DB)
+        const carrierMap = {
+            'IN': { '91': 'Airtel', '98': 'Vodafone Idea', '70': 'Jio', '80': 'BSNL' },
+            'US': { '212': 'Verizon', '310': 'AT&T', '415': 'T-Mobile' },
+            'GB': { '74': 'EE', '77': 'O2', '78': 'Vodafone' }
+        };
+        const prefix = phoneNumber.number.slice(3, 5); // Basic prefix extraction
+        const carrierName = carrierMap[phoneNumber.country]?.[prefix] || "UNKNOWN OPERATOR";
+        document.getElementById('res-carrier-name').textContent = carrierName;
+
+        // State / Region Lookup (Simulated)
+        const stateMap = {
+            'IN': { '91': 'Maharashtra', '98': 'Delhi', '70': 'Karnataka', '80': 'Tamil Nadu' },
+            'US': { '212': 'New York', '310': 'California', '415': 'California' }
+        };
+        const stateName = stateMap[phoneNumber.country]?.[prefix] || "UNRESOLVED STATE";
+        document.getElementById('res-state').textContent = stateName;
+        document.getElementById('res-name').textContent = "REQUIRES MANUAL PIVOT";
+
         // Geocoding
         const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
         const cName = phoneNumber.country ? regionNames.of(phoneNumber.country) : "Earth";
+        const searchLocation = stateName !== "UNRESOLVED STATE" ? `${stateName}, ${cName}` : cName;
 
         showStatus("Fetching Geospatial Data...", "success");
-        const coords = await getCoordinates(cName);
+        const coords = await getCoordinates(searchLocation);
         if (coords) {
-            updateMapDisplay(coords.lat, coords.lon, 6);
-            showStatus("Recon Complete. Target Geocoded.", "success");
+            updateMapDisplay(coords.lat, coords.lon, 8);
+            showStatus(`Recon Complete. Target: ${stateName}`, "success");
         } else {
             showStatus("Geocoding failed. Using Regional default.", "error");
             updateMapDisplay(0, 0, 2);

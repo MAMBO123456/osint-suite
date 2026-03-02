@@ -84,20 +84,45 @@
                             <div class="panel-header"><i data-lucide="activity"></i> TARGET METADATA</div>
                             <div class="stats-list">
                                 <div class="stat-box">
-                                    <span class="stat-label">COUNTRY</span>
+                                    <span class="stat-label">COUNTRY <small>[ISO-3166]</small></span>
                                     <span id="res-country" class="stat-value">---</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-label">CARRIER</span>
+                                    <span class="stat-label">CARRIER CODE <small>[MCC/MNC]</small></span>
                                     <span id="res-carrier" class="stat-value">---</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-label">TIMEZONE</span>
+                                    <span class="stat-label">TIMEZONE <small>[TZ-DB]</small></span>
                                     <span id="res-timezone" class="stat-value">---</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-label">LINE TYPE</span>
+                                    <span class="stat-label">LINE TYPE <small>[LIBPHONE]</small></span>
                                     <span id="res-type" class="stat-value">---</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">CARRIER / SIM <small>[PREFIX-DB]</small></span>
+                                    <span id="res-carrier-name" class="stat-value">---</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Identity Panel (NEW) -->
+                        <div class="panel identity-panel">
+                            <div class="panel-header"><i data-lucide="user-plus"></i> IDENTITY CORRELATION
+                                [TRUECALLER/SOCIAL]</div>
+                            <div class="identity-profile">
+                                <div class="id-item">
+                                    <span class="id-label">NAME / ALIAS</span>
+                                    <span id="res-name" class="id-value">PENDING SCAN</span>
+                                </div>
+                                <div class="id-item">
+                                    <span class="id-label">REGISTRATION STATE</span>
+                                    <span id="res-state" class="id-value">PENDING SCAN</span>
+                                </div>
+                                <div class="identity-actions">
+                                    <button class="pivot-btn" data-type="truecaller"
+                                        title="Search Truecaller for Name"><i data-lucide="search"></i> DEEP PIVOT:
+                                        TRUECALLER</button>
                                 </div>
                             </div>
                         </div>
