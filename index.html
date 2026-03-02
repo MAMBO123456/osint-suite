@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>White-Hat OSINT | Mobile Intelligence Suite</title>
+
+    <!-- SEO & Public Release Meta Tags -->
+    <meta name="description"
+        content="Professional White-Hat OSINT suite for mobile number intelligence, geolocation tracking, and digital footprint analysis. Designed for CTF challenges and educational reconnaissance.">
+    <meta name="keywords"
+        content="OSINT, Mobile Tracker, Geolocation, CTF, Ethical Hacking, Digital Footprint, White-Hat">
+    <meta property="og:title" content="White-Hat OSINT Suite">
+    <meta property="og:description" content="Advanced Mobile Intelligence & Geolocation Suite.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- libphonenumber-js -->
+    <script src="https://unpkg.com/libphonenumber-js/bundle/libphonenumber-js.min.js"></script>
+    <!-- Leaflet JS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body class="hacking-theme">
+    <div class="background-grid"></div>
+    <div class="scanline"></div>
+
+    <main class="app-shell">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i data-lucide="shield-check" class="brand-icon"></i>
+                <div class="brand-text">
+                    <h2>WHITE-HAT</h2>
+                    <span>OSINT SUITE v2.0</span>
+                </div>
+            </div>
+
+            <nav class="side-nav">
+                <button class="nav-item active" data-tab="recon"><i data-lucide="crosshair"></i> Live Recon</button>
+                <button class="nav-item" data-tab="payloads"><i data-lucide="terminal"></i> Payloads</button>
+                <button class="nav-item" data-tab="methodology" id="methodology-link"><i data-lucide="book-open"></i>
+                    Methodology</button>
+                <button class="nav-item" data-tab="opsec"><i data-lucide="fingerprint"></i> OPSEC Status</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="pulse green"></span> SYSTEM SECURE
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <section class="main-content">
+            <header class="content-header">
+                <div class="breadcrumb">RECON / MOBILE / <span id="current-target">NO TARGET</span></div>
+                <div id="clock">20:48:15 UTC</div>
+            </header>
+
+            <div class="tab-content active" id="recon-tab">
+                <div class="search-bar-container">
+                    <div class="hacker-input-group">
+                        <label for="phone-input">ENTER MOBILE TARGET (MSISDN):</label>
+                        <div class="input-row">
+                            <input type="text" id="phone-input" placeholder="+[CC][NUMBER]" spellcheck="false">
+                            <button id="analyze-btn">INITIATE ANALYSIS <i data-lucide="zap"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="results-dashboard" class="dashboard-hidden">
+                    <div class="dashboard-grid">
+                        <!-- Meta Stats -->
+                        <div class="panel stats-panel">
+                            <div class="panel-header"><i data-lucide="activity"></i> TARGET METADATA</div>
+                            <div class="stats-list">
+                                <div class="stat-box">
+                                    <span class="stat-label">COUNTRY</span>
+                                    <span id="res-country" class="stat-value">---</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">CARRIER</span>
+                                    <span id="res-carrier" class="stat-value">---</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">TIMEZONE</span>
+                                    <span id="res-timezone" class="stat-value">---</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">LINE TYPE</span>
+                                    <span id="res-type" class="stat-value">---</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Map Panel -->
+                        <div class="panel map-panel">
+                            <div class="panel-header">
+                                <i data-lucide="globe"></i> GEOSPATIAL INTELLIGENCE
+                                <div class="map-controls">
+                                    <button class="map-style-btn" data-style="dark">DARK</button>
+                                    <button class="map-style-btn" data-style="satellite">SATELLITE</button>
+                                    <button class="map-style-btn" data-style="hybrid">HYBRID</button>
+                                </div>
+                            </div>
+                            <div id="map"></div>
+                            <div class="map-info">
+                                <div class="coords-display">
+                                    LAT: <span id="lat-val">0.00000</span> | LNG: <span id="lng-val">0.00000</span>
+                                </div>
+                                <div class="address-resolver-group">
+                                    <button id="resolve-address-btn" title="Resolve Coordinates to Address"><i
+                                            data-lucide="map-pin"></i> RESOLVE ADDRESS</button>
+                                    <button id="demo-gps-btn" class="demo-btn"
+                                        title="Prove accuracy using your own GPS"><i data-lucide="crosshair"></i> DEMO:
+                                        MY REAL GPS</button>
+                                    <button id="refine-toggle-btn"><i data-lucide="edit-3"></i> REFINE</button>
+                                </div>
+                            </div>
+                            <div id="resolved-address-bar" class="hidden">
+                                <i data-lucide="info"></i> <span id="resolved-address-text">Scanning for physical
+                                    address...</span>
+                            </div>
+                            <div id="manual-refine-panel" class="hidden">
+                                <div class="refine-inputs">
+                                    <input type="text" id="manual-lat" placeholder="LAT">
+                                    <input type="text" id="manual-lng" placeholder="LNG">
+                                    <button id="update-map-btn">UPDATE FIX</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Intelligence Correlation Panel -->
+                        <div class="panel correlation-panel">
+                            <div class="panel-header"><i data-lucide="brain-circuit"></i> INTELLIGENCE CORRELATION</div>
+                            <div class="correlation-form">
+                                <div class="form-group-inline">
+                                    <input type="text" id="clue-name" placeholder="KNOWN NAME">
+                                    <button class="clue-search-btn" data-source="social"><i
+                                            data-lucide="users"></i></button>
+                                </div>
+                                <div class="form-group-inline">
+                                    <input type="text" id="clue-address" placeholder="PROBABLE AREA/ADDRESS">
+                                    <button class="clue-search-btn" data-source="maps"><i
+                                            data-lucide="map"></i></button>
+                                </div>
+                                <div class="form-group-inline">
+                                    <textarea id="clue-image" placeholder="IMAGE DESCRIPTION / ENTITY DETAILS"
+                                        rows="2"></textarea>
+                                    <button class="clue-search-btn" data-source="images"><i
+                                            data-lucide="image"></i></button>
+                                </div>
+                            </div>
+                            <p class="panel-hint">Cross-reference known entities with geospatial data to confirm exact
+                                location.</p>
+                        </div>
+
+                        <!-- Digital Footprint Scraper -->
+                        <div class="panel scraper-panel">
+                            <div class="panel-header"><i data-lucide="fingerprint"></i> DIGITAL FOOTPRINT (METHOD #1)
+                            </div>
+                            <div class="scraper-grid">
+                                <button class="scraper-btn" data-search="instagram"><i data-lucide="instagram"></i> IG
+                                    GEOTAGS</button>
+                                <button class="scraper-btn" data-search="twitter"><i data-lucide="twitter"></i> TWITTER
+                                    CLUES</button>
+                                <button class="scraper-btn" data-search="linkedin"><i data-lucide="linkedin"></i> WORK
+                                    LOCATIONS</button>
+                                <button class="scraper-btn" data-search="facebook"><i data-lucide="facebook"></i> FB
+                                    CHECK-INS</button>
+                            </div>
+                            <p class="panel-hint">Search for photos, check-ins, or posts containing location tags.</p>
+                        </div>
+
+                        <!-- Advanced Recon Hub -->
+                        <div class="panel hub-panel">
+                            <div class="panel-header"><i data-lucide="layers"></i> PIVOT INTELLIGENCE</div>
+                            <div class="pivot-grid">
+                                <button class="pivot-btn" data-type="intelx"><i data-lucide="database"></i>
+                                    INTELX</button>
+                                <button class="pivot-btn" data-type="dehashed"><i data-lucide="unlock"></i>
+                                    DEHASHED</button>
+                                <button class="pivot-btn" data-type="truecaller"><i data-lucide="user-check"></i>
+                                    TRUECALLER</button>
+                                <button class="pivot-btn" data-type="whatsapp"><i data-lucide="message-square"></i>
+                                    WHATSAPP</button>
+                                <button class="pivot-btn" data-type="telegram"><i data-lucide="send"></i>
+                                    TELEGRAM</button>
+                                <button class="pivot-btn" data-type="google-geo"><i data-lucide="map-pin"></i>
+                                    GEO-DORK</button>
+                                <button class="pivot-btn" data-type="leaks"><i data-lucide="search"></i> LEAK
+                                    SEARCH</button>
+                                <button class="pivot-btn" data-type="hlr"><i data-lucide="rss"></i> HLR LOOKUP</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payloads Tab -->
+            <div class="tab-content" id="payloads-tab">
+                <div class="panel payload-panel">
+                    <div class="panel-header">
+                        <i data-lucide="zap"></i> ACTIVE RECON: TRACKING LINK GENERATOR
+                        <div class="listener-status">
+                            <span class="pulse green"></span> LISTENER ACTIVE (LOCAL)
+                        </div>
+                    </div>
+                    <p class="warning-text">CTF MODE ACTIVE: Use these links to capture precise GPS data via browser
+                        interaction.</p>
+                    <div class="payload-info-box">
+                        <i data-lucide="help-circle"></i>
+                        <span>
+                            <b>REAL-LIFE TRACKING:</b> To receive real data, enter your <b>Webhook URL</b> below.
+                            If you just want to test, use the <b>"SIMULATE INTERACTION"</b> button.
+                            <br><small>Tip: Use <a href="https://webhook.site" target="_blank"
+                                    style="color:var(--accent-hacker)">Webhook.site</a> to get a free unique
+                                URL.</small>
+                        </span>
+                    </div>
+                    <div class="payload-form">
+                        <div class="form-group">
+                            <label>PHISHING TEMPLATE (THEME):</label>
+                            <select id="payload-type">
+                                <option value="near-me">"Near Me" Restaurant Tool (Google Maps Clone)</option>
+                                <option value="track-package">Package Tracker (Courier Simulation)</option>
+                                <option value="social-invite">Private Media Gallery (Instagram Clone)</option>
+                                <option value="emergency">Emergency Alert (System Simulation)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>TARGET REDIRECT (REAL URL):</label>
+                            <input type="url" id="payload-redirect"
+                                placeholder="https://www.google.com/maps/search/pizza">
+                        </div>
+                        <div class="form-group">
+                            <label>LISTENER WEBHOOK URL (FOR REAL DATA):</label>
+                            <input type="url" id="payload-webhook" placeholder="https://webhook.site/your-unique-id">
+                        </div>
+                        <button id="generate-payload-btn">GENERATE LIVE TRACKING LINK <i
+                                data-lucide="link-2"></i></button>
+                    </div>
+                    <div id="payload-output" class="hidden">
+                        <div class="code-block" id="generated-code">
+                            [+] INITIALIZING TRACKING LINK...
+                        </div>
+                        <div class="payload-actions">
+                            <button class="action-btn" id="copy-payload-btn"><i data-lucide="copy"></i> COPY
+                                LINK</button>
+                            <button class="action-btn" id="simulate-payload-btn"><i data-lucide="mouse-pointer"></i>
+                                SIMULATE INTERACTION</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPSEC Tab -->
+            <div class="tab-content" id="opsec-tab">
+                <div class="panel opsec-panel">
+                    <div class="panel-header"><i data-lucide="shield"></i> INVESTIGATOR OPSEC STATUS</div>
+                    <div class="opsec-list">
+                        <div class="opsec-item">
+                            <i data-lucide="check-circle" class="green-ico"></i> VPN / PROXY ACTIVE
+                        </div>
+                        <div class="opsec-item">
+                            <i data-lucide="check-circle" class="green-ico"></i> BROWSER FINGERPRINTING MITIGATED
+                        </div>
+                        <div class="opsec-item">
+                            <i data-lucide="alert-triangle" class="yellow-ico"></i> SOCK PUPPET ACCOUNT LOGGED IN
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Methodology -->
+    <div id="methodology-modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>HACKER METHODOLOGY</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="methodology-body">
+                <!-- Content will be loaded from methodology.md or injected -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <!-- Terms of Service Modal -->
+    <div id="tos-modal" class="modal-overlay tos-modal hidden">
+        <div class="modal-content glass" style="height: auto; max-height: 90vh;">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="shield-alert" style="color:var(--accent-hacker)"></i>
+                    <h2 style="margin:0">LEGAL DISCLAIMER & TERMS</h2>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p>By using the <b>White-Hat OSINT Suite</b>, you acknowledge and agree to the following:</p>
+                <ul style="color: var(--text-secondary); line-height: 1.6;">
+                    <li>This tool is for <b>Educational Purposes</b> and <b>CTF Challenges</b> only.</li>
+                    <li>You will not use this tool for illegal tracking, harassment, or unauthorized surveillance.</li>
+                    <li>The developer assumes <b>no liability</b> for misuse of this software.</li>
+                    <li>You are solely responsible for complying with your local privacy and data laws (GDPR, CCPA,
+                        etc.).</li>
+                </ul>
+                <p class="warning-text"
+                    style="color:#ff4100; font-weight:800; border:1px solid #ff4100; padding:10px; text-align:center;">
+                    UNAUTHORIZED USE FOR MALICIOUS PURPOSES IS STRICTLY PROHIBITED.
+                </p>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem; border-top: 1px solid var(--border-hacker);">
+                <button id="accept-tos" class="pivot-btn"
+                    style="width:100%; justify-content:center; padding:1.25rem; background:var(--accent-hacker); color:black;">I
+                    ACCEPT & UNDERSTAND</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
